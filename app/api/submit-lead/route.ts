@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     console.error('Resend error:', error)
-    return NextResponse.json({ error: 'Failed to send email', detail: error }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to send email', detail: (error as {message?: string})?.message ?? JSON.stringify(error) }, { status: 500 })
   }
 
   return NextResponse.json({ success: true })
