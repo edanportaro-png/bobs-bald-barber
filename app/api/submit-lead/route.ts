@@ -19,8 +19,9 @@ export async function POST(req: NextRequest) {
     const safeEmail = escape(String(email))
     const safePhone = escape(String(phone))
 
-    const { error } = await resend.emails.send({
-      from: 'Bob\'s Bald Barber <onboarding@resend.dev>',
+    // Notify Bob
+    const { error: ownerError } = await resend.emails.send({
+      from: 'Bob\'s Bald Barber <hello@grpc.biz>',
       to: process.env.OWNER_EMAIL!,
       subject: `New Lead: ${safeName}`,
       html: `
@@ -31,10 +32,22 @@ export async function POST(req: NextRequest) {
       `,
     })
 
-    if (error) {
-      console.error('Resend error:', error)
+    if (ownerError) {
+      console.error('Owner email error:', ownerError)
       return NextResponse.json({ error: 'Failed to send email' }, { status: 500 })
     }
+
+    // Confirm to the lead — runs independently so a bad lead email doesn't block Bob's notification
+    await resend.emails.send({
+      from: 'Bob\'s Bald Barber <hello@grpc.biz>',
+      to: String(email),
+      subject: 'You\'re on Bob\'s list!',
+      html: `
+        <p>Hi ${safeName},</p>
+        <p>Thanks for reaching out to Bob's Bald Barber! Bob will be in touch shortly to book your visit.</p>
+        <p><strong>Get Ready to GET BALD - Because BALD is Beautiful!</strong></p>
+      `,
+    })
 
     return NextResponse.json({ success: true })
   } catch (e) {
